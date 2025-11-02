@@ -1,37 +1,43 @@
-import requests
+from gql import gql, Client
+from gql.transport.requests import RequestsHTTPTransport
 from datetime import datetime, timedelta
 
-# GraphQL endpoint
-url = "http://localhost:8000/graphql"
+# Setup GraphQL transport
+transport = RequestsHTTPTransport(
+    url="http://localhost:8000/graphql",
+    verify=True,
+    retries=3,
+)
+
+client = Client(transport=transport, fetch_schema_from_transport=True)
 
 # Calculate date range
 one_week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
 
-# GraphQL query
-query = """
-query {
-  orders(orderDate_Gte: "%s") {
-    edges {
-      node {
+# Define GraphQL query
+query = gql(f"""
+query {{
+  orders(orderDate_Gte: "{one_week_ago}") {{
+    edges {{
+      node {{
         id
-        customer {
+        customer {{
           email
-        }
-      }
-    }
-  }
-}
-""" % one_week_ago
+        }}
+      }}
+    }}
+  }}
+}}
+""")
 
-# Send request
-response = requests.post(url, json={"query": query})
-data = response.json()
+# Execute query
+response = client.execute(query)
 
 # Log results
 with open("/tmp/order_reminders_log.txt", "a") as log:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log.write(f"\n{timestamp} - Order Reminders:\n")
-    for edge in data["data"]["orders"]["edges"]:
+    for edge in response["orders"]["edges"]:
         order = edge["node"]
         log.write(f"Order ID: {order['id']}, Email: {order['customer']['email']}\n")
 
