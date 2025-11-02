@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from graphene_django.filter import DjangoFilterConnectionField
 from .filters import CustomerFilter, ProductFilter, OrderFilter
+from crm.models import Product
 
 class CustomerInput(graphene.InputObjectType):
     name = graphene.String(required=True)
@@ -142,7 +143,7 @@ class UpdateLowStockProducts(graphene.Mutation):
             updated_products=updated_names,
             message="Low-stock products restocked successfully"
         )
-    
+ 
 class Mutation(graphene.ObjectType):
     create_customer = CreateCustomer.Field()
     bulk_create_customers = BulkCreateCustomers.Field()

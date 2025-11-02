@@ -1,20 +1,30 @@
-from datetime import datetime
 import requests
+from datetime import datetime
+from gql import gql, Client
+from gql.transport.requests import RequestsHTTPTransport
 
 def log_crm_heartbeat():
     timestamp = datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
     message = f"{timestamp} CRM is alive\n"
 
-    # Optional: ping GraphQL endpoint
+    # Optional GraphQL ping
     try:
-        response = requests.post("http://localhost:8000/graphql", json={"query": "{ hello }"})
-        if response.status_code == 200:
-            message += "GraphQL responded successfully\n"
+        transport = RequestsHTTPTransport(
+            url="http://localhost:8000/graphql",
+            verify=True,
+            retries=3,
+        )
+        client = Client(transport=transport, fetch_schema_from_transport=True)
+        query = gql("{ hello }")
+        result = client.execute(query)
+        if result.get("hello"):
+            message += "GraphQL hello responded: " + result["hello"] + "\n"
     except Exception as e:
         message += f"GraphQL ping failed: {e}\n"
 
     with open("/tmp/crm_heartbeat_log.txt", "a") as log:
         log.write(message)
+
 
 def update_low_stock():
     query = """
