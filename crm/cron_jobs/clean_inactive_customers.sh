@@ -13,4 +13,6 @@ inactive_customers.delete()
 
 with open("/tmp/customer_cleanup_log.txt", "a") as log:
     log.write(f"{timezone.now()} - Deleted {count} inactive customers\n")
+
+print("Cleanup complete")
 END
